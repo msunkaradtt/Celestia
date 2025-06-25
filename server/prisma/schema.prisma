@@ -1,0 +1,27 @@
+// FILE: server/prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Artwork {
+  id             String   @id @default(uuid())
+  name           String
+  prompt         String
+  negativePrompt String
+  satelliteName  String
+  imageUrl       String   // This will store the path to the image in MinIO
+  createdAt      DateTime @default(now())
+}
+
+model Satellite {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  line1 String
+  line2 String
+}

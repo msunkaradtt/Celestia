@@ -1,0 +1,72 @@
+# FILE: docker-compose.yml
+
+services:
+  backend:
+    build: ./server
+    ports:
+      - "3001:3001"
+    depends_on:
+      - db
+      - minio
+      - ai-service
+      - redis
+    environment:
+      DATABASE_URL: "postgresql://user:password@db:5432/spacedb"
+      MINIO_ENDPOINT: "minio"
+      MINIO_PORT: "9000"
+      MINIO_ACCESS_KEY: "minioadmin"
+      MINIO_SECRET_KEY: "minioadmin"
+      MINIO_BUCKET: "artworks"
+      # The wait-for-it script is no longer needed here as our app handles it
+      # WAIT_HOSTS: db:5432 (This can be removed or left, our new logic is more robust)
+
+  ai-service:
+    build: ./ai-service
+    ports:
+      - "8000:8000"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  db:
+    # ... (no changes to db)
+    image: postgres:14-alpine
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: spacedb
+
+  minio:
+    image: minio/minio:RELEASE.2023-09-07T02-05-02Z
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+
+volumes:
+  postgres_data:
+  minio_data:
+  redis_data:

@@ -1,0 +1,32 @@
+@import url('https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;700;900&display=swap');
+
+@import "tailwindcss";
+@config "../../tailwind.config.ts";
+
+/*@theme {
+  --color-primary-dark: #3A0519;
+  --color-primary-deep: #670D2F;
+  --color-primary-vibrant: #A53860;
+  --color-primary-accent: #EF88AD
+}*/
+
+body {
+  background-color: #3A0519;
+  color: #E5E7EB; /* A light gray for default text */
+  font-family: 'Exo 2', sans-serif;
+}
+
+/* Custom scrollbar for a more thematic feel */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #3A0519;
+}
+::-webkit-scrollbar-thumb {
+  background: #A53860;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #EF88AD;
+}
