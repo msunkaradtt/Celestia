@@ -9,7 +9,8 @@
     "start:prod": "./wait-for-it.sh db 5432 -- node dist/server.js",
     "postinstall": "prisma generate",
     "seed": "ts-node prisma/seed.ts",
-    "admin": "ts-node src/scripts/admin.ts"
+    "admin": "ts-node src/scripts/admin.ts",
+    "start:render": "node dist/server.js"
   },
   "keywords": [],
   "author": "",
