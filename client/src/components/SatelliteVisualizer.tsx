@@ -37,7 +37,6 @@ const SatelliteVisualizer = () => {
 
     const [queueStatus, setQueueStatus] = useState<QueueStatusState | null>(null);
 
-    // --- DEPLOYMENT FIX: Use environment variables for URLs ---
     const API_URL = process.env.NEXT_PUBLIC_API_URL;
     const WS_URL = process.env.NEXT_PUBLIC_WS_URL;
 
@@ -75,7 +74,6 @@ const SatelliteVisualizer = () => {
             }
         };
     }, [router, WS_URL]);
-
 
     // Effect to preload the map image
     useEffect(() => {
@@ -121,6 +119,14 @@ const SatelliteVisualizer = () => {
             if (!canvas) return;
             const satrec = satellite.twoline2satrec(selectedSat.line1, selectedSat.line2);
             const positionAndVelocity = satellite.propagate(satrec, new Date());
+            
+            // --- THE FIX: Check if the calculation was successful ---
+            if (!positionAndVelocity || typeof positionAndVelocity.velocity === 'undefined') {
+                console.error(`Could not calculate position for ${selectedSat.name}.`);
+                return; // Exit the function early if data is invalid
+            }
+            // --- END FIX ---
+
             const velocity = positionAndVelocity.velocity as satellite.EciVec3<number>;
             const startX = canvas.width / 2 + (velocity.x * 20);
             const startY = canvas.height / 2 + (velocity.y * 20);
