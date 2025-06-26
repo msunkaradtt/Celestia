@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import Pagination from './Pagination';
+import Image from 'next/image'; // Import the optimized Next.js Image component
 
 interface Artwork {
   id: string;
@@ -34,31 +35,38 @@ const ArtworkGallery = () => {
   
   const [currentPage, setCurrentPage] = useState(1);
   const [satelliteList, setSatelliteList] = useState<TleData[]>([]);
-  const [selectedFilter, setSelectedFilter] = useState<string>('all'); // 'all' or a satellite name
+  const [selectedFilter, setSelectedFilter] = useState<string>('all');
+
+  // Get the API URL from the environment variable. It MUST be prefixed with NEXT_PUBLIC_
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   // Effect to fetch the list of satellites for the dropdown
   useEffect(() => {
-      const fetchSatellites = async () => {
-          try {
-              const res = await fetch('http://localhost:3001/api/tle-data/gnss');
-              if (!res.ok) throw new Error('Failed to fetch satellite list.');
-              setSatelliteList(await res.json());
-          } catch (err) {
-              console.error(err);
-              // Handle error silently for the filter list
-          }
-      };
-      fetchSatellites();
-  }, []);
+    const fetchSatellites = async () => {
+        if (!API_URL) return; // Don't fetch if the URL isn't configured
+        try {
+            const res = await fetch(`${API_URL}/api/tle-data/gnss`);
+            if (!res.ok) throw new Error('Failed to fetch satellite list.');
+            setSatelliteList(await res.json());
+        } catch (err) {
+            console.error("Could not fetch satellite list for filter:", err);
+        }
+    };
+    fetchSatellites();
+  }, [API_URL]);
 
   // Effect to fetch the artworks when page or filter changes
   useEffect(() => {
     const fetchGallery = async () => {
+      if (!API_URL) {
+          setError("API URL environment variable is not set.");
+          setIsLoading(false);
+          return;
+      }
       setIsLoading(true);
       setError(null);
       
-      // Build the API URL dynamically
-      let url = `http://localhost:3001/api/art/gallery?page=${currentPage}&limit=${ARTWORKS_PER_PAGE}`;
+      let url = `${API_URL}/api/art/gallery?page=${currentPage}&limit=${ARTWORKS_PER_PAGE}`;
       if (selectedFilter !== 'all') {
           url += `&satelliteName=${encodeURIComponent(selectedFilter)}`;
       }
@@ -76,12 +84,11 @@ const ArtworkGallery = () => {
     };
 
     fetchGallery();
-  }, [currentPage, selectedFilter]);
+  }, [currentPage, selectedFilter, API_URL]);
 
-  // When the filter changes, reset to the first page
   const handleFilterChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
       setSelectedFilter(event.target.value);
-      setCurrentPage(1); // Go back to page 1 for the new filter
+      setCurrentPage(1);
   };
 
   return (
@@ -117,11 +124,14 @@ const ArtworkGallery = () => {
                         key={art.id}
                         className="bg-primary-dark/50 border border-primary-deep rounded-lg shadow-lg overflow-hidden group transition-all duration-300 hover:border-primary-accent/50 hover:shadow-2xl hover:shadow-primary-vibrant/10"
                     >
-                        <div className="overflow-hidden">
-                            <img
+                        <div className="overflow-hidden h-64 w-full relative">
+                            {/* Use the optimized Next.js Image component */}
+                            <Image
                                 src={art.imageUrl}
                                 alt={art.name}
-                                className="w-full h-64 object-cover transition-transform duration-500 ease-in-out group-hover:scale-105"
+                                layout="fill"
+                                objectFit="cover"
+                                className="transition-transform duration-500 ease-in-out group-hover:scale-105"
                             />
                         </div>
                         <div className="p-5">

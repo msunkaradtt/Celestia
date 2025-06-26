@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname } from 'next/navigation'; // Import the hook
-import ConnectWallet from "./ConnectWallet";
+//import ConnectWallet from "./ConnectWallet";
 
 const Navbar = () => {
   const pathname = usePathname(); // Get the current URL path

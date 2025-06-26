@@ -6,7 +6,7 @@ export default function DataPrivacyPage() {
         <LegalPageLayout title="Data Privacy Statement">
             <h2>Our Commitment to Your Privacy</h2>
             <p>
-                Celestia is committed to ensuring the privacy and protection of our users' data. This statement outlines our practices concerning the data generated and stored through your use of our service.
+                Celestia is committed to ensuring the privacy and protection of our users&apos; data. This statement outlines our practices concerning the data generated and stored through your use of our service.
             </p>
 
             <h2>What Data is Public?</h2>

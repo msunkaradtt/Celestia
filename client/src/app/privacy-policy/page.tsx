@@ -4,9 +4,9 @@ import LegalPageLayout from "@/components/LegalPageLayout";
 export default function PrivacyPolicyPage() {
     return (
         <LegalPageLayout title="Privacy Policy">
-            <p>Last updated: June 24, 2025</p>
+            <p>Last updated: June 25, 2025</p>
             <p>
-                Your privacy is important to us. It is Celestia' policy to respect your privacy regarding any information we may collect from you across our website. We do not collect any personally identifiable information.
+                Your privacy is important to us. It is Celestia&apos; policy to respect your privacy regarding any information we may collect from you across our website. We do not collect any personally identifiable information.
             </p>
             
             <h2>1. Information We Collect</h2>
@@ -18,11 +18,6 @@ export default function PrivacyPolicyPage() {
             <p>
                 We use the information we collect solely to provide, operate, and maintain our services, specifically for displaying generated artworks in our public gallery.
             </p>
-            <ul>
-                <li>Provide, operate, and maintain our services.</li>
-                <li>Display your generated artworks in our public gallery.</li>
-                <li>Improve, personalize, and expand our services.</li>
-            </ul>
 
             <h2>3. Data Security</h2>
             <p>
