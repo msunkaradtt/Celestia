@@ -7,8 +7,8 @@ import { Server as HttpServer } from 'http'; // Use an alias for clarity
 // This import is needed for the broadcast function
 import { broadcastQueueUpdate } from './worker'; 
 
-const redisHost = "redis";
-const redisPort = "6379";
+const redisHost = process.env.REDIS_HOST;
+const redisPort = process.env.REDIS_PORT;
 
 if (!redisHost || !redisPort) {
     throw new Error('FATAL ERROR: REDIS_HOST and REDIS_PORT must be defined.');
