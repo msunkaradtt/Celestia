@@ -10,6 +10,8 @@ import { artGenerationQueue, broadcast } from './queue';
 
 const redisHost = process.env.REDIS_HOST;
 const redisPort = process.env.REDIS_PORT;
+const aiserviceURL = process.env.AI_SERVICE_URL;
+
 if (!redisHost || !redisPort) throw new Error('Redis config missing');
 const connection = new IORedis({ host: redisHost, port: parseInt(redisPort), maxRetriesPerRequest: null });
 
@@ -19,7 +21,7 @@ const processJob = async (job: Job) => {
 
     try {
         // 1. Call AI Service (no changes here)
-        const aiServiceUrl = 'http://ai-service:8000/generate-art';
+        const aiServiceUrl = `${aiserviceURL}/generate-art`;
         const form = new FormData();
         form.append('image', Buffer.from(signatureImageBuffer.data), { filename: 'signature.png' });
         form.append('prompt', prompt);

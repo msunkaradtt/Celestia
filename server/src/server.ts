@@ -7,6 +7,7 @@ import { initWebSocketServer } from './queue';
 import { startWorker } from './worker';
 
 const port = process.env.PORT || 3001;
+const aiserviceURL = process.env.AI_SERVICE_URL;
 
 // Create the main HTTP server from our Express application
 const httpServer = createServer(app);
@@ -16,7 +17,7 @@ initWebSocketServer(httpServer);
 
 // --- NEW: Function to wait for the AI service ---
 async function waitForAiService() {
-    const aiServiceUrl = 'http://ai-service:8000/health';
+    const aiServiceUrl = `${aiserviceURL}/health`;
     let isReady = false;
     console.log('Checking AI service readiness...');
     while (!isReady) {
