@@ -9,8 +9,12 @@ import * as THREE from 'three';
 function DriftingStars() {
     const pointsRef = useRef<THREE.Points>(null!);
 
-    const particles = useMemo(() => {
-        const count = 7000; // Increased particle count for a denser feel
+    // --- THE FIX: Create the geometry and its attributes inside a useMemo hook ---
+    // This is a more standard and robust pattern for creating custom geometry in R3F.
+    const geometry = useMemo(() => {
+        const geom = new THREE.BufferGeometry();
+        const count = 7000;
+
         const positions = new Float32Array(count * 3);
         const colors = new Float32Array(count * 3);
 
@@ -23,16 +27,21 @@ function DriftingStars() {
             color.set(Math.random() > 0.3 ? '#A53860' : '#EF88AD');
             colors.set([color.r, color.g, color.b], i * 3);
         }
-        return { positions, colors };
+
+        geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        geom.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+        return geom;
     }, []);
+    // --- END FIX ---
+
 
     useFrame((state) => {
         const { clock, pointer } = state;
         if (pointsRef.current) {
-            // Constant rotation for ambiance
+            // Ambiant rotation
             pointsRef.current.rotation.y = clock.getElapsedTime() * 0.05;
 
-            // Parallax effect based on mouse position
+            // Parallax effect based on mouse
             const targetX = pointer.x * 0.1;
             const targetY = pointer.y * 0.1;
             
@@ -42,21 +51,7 @@ function DriftingStars() {
     });
 
     return (
-        <points ref={pointsRef}>
-            <bufferGeometry>
-                <bufferAttribute
-                    attach="attributes-position"
-                    count={particles.positions.length / 3}
-                    array={particles.positions}
-                    itemSize={3}
-                />
-                <bufferAttribute
-                    attach="attributes-color"
-                    count={particles.colors.length / 3}
-                    array={particles.colors}
-                    itemSize={3}
-                />
-            </bufferGeometry>
+        <points ref={pointsRef} geometry={geometry}>
             <pointsMaterial
                 size={0.02}
                 sizeAttenuation
@@ -71,7 +66,7 @@ function DriftingStars() {
 // The main component that renders our beautiful background
 const HeroCanvas = () => {
     return (
-        <div className="absolute top-0 left-0 w-full h-full -z-10">
+        <div className="absolute top-0 left-0 w-full h-full -z-10 bg-primary-dark">
             <Canvas camera={{ position: [0, 0, 5], fov: 60 }}>
                 <fog attach="fog" args={['#3A0519', 5, 12]} />
                 <DriftingStars />
