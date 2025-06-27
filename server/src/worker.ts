@@ -3,10 +3,14 @@ import { Worker, Job } from 'bullmq';
 import IORedis from 'ioredis';
 import axios from 'axios';
 import FormData from 'form-data';
-import { supabase } from './supabaseClient'; // Import the new Supabase client
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3"; // AWS S3 Client
 import prisma from './db';
 import { randomUUID } from 'crypto';
 import { artGenerationQueue, broadcast } from './queue';
+
+// Initialize S3 Client
+const s3Client = new S3Client({ region: process.env.AWS_REGION });
+const BUCKET_NAME = process.env.S3_BUCKET_NAME;
 
 const redisHost = process.env.REDIS_HOST;
 const redisPort = process.env.REDIS_PORT;
@@ -21,6 +25,7 @@ const processJob = async (job: Job) => {
 
     try {
         // 1. Call AI Service (no changes here)
+        if (!aiserviceURL) throw new Error("AI_SERVICE_URL not configured");
         const aiServiceUrl = `${aiserviceURL}/generate-art`;
         const form = new FormData();
         form.append('image', Buffer.from(signatureImageBuffer.data), { filename: 'signature.png' });
@@ -29,22 +34,20 @@ const processJob = async (job: Job) => {
         const aiResponse = await axios.post(aiServiceUrl, form, { headers: form.getHeaders(), responseType: 'arraybuffer' });
         const generatedImageBuffer = Buffer.from(aiResponse.data, 'binary');
 
-        // --- UPDATED LOGIC: Upload to Supabase Storage ---
+        // --- UPDATED LOGIC: Upload to AWS S3 ---
+        if (!BUCKET_NAME || !process.env.AWS_REGION) {
+            throw new Error("S3 Bucket Name or AWS Region is not configured.");
+        }
         const generatedImageName = `${randomUUID()}.png`;
-        const { data: uploadData, error: uploadError } = await supabase.storage
-            .from('artworks') // The name of your public bucket
-            .upload(generatedImageName, generatedImageBuffer, {
-                contentType: 'image/png',
-                upsert: false,
-            });
-
-        if (uploadError) throw uploadError;
-
-        // Get the public URL for the newly uploaded file
-        const { data: urlData } = supabase.storage
-            .from('artworks')
-            .getPublicUrl(generatedImageName);
-        const imageUrl = urlData.publicUrl;
+        const uploadCommand = new PutObjectCommand({
+            Bucket: BUCKET_NAME,
+            Key: generatedImageName,
+            Body: generatedImageBuffer,
+            ContentType: 'image/png',
+            ACL: 'public-read' // Make the file publicly viewable
+        });
+        await s3Client.send(uploadCommand);
+        const imageUrl = `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${generatedImageName}`;
         // --- END UPDATED LOGIC ---
 
         // 3. Save metadata to our PostgreSQL database (no changes here)

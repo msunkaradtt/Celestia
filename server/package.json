@@ -17,6 +17,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.837.0",
     "@prisma/client": "^6.10.1",
     "@supabase/supabase-js": "^2.50.2",
     "@types/multer": "^1.4.13",
@@ -27,7 +28,6 @@
     "express": "^5.1.0",
     "form-data": "^4.0.3",
     "ioredis": "^5.6.1",
-    "minio": "^8.0.5",
     "multer": "^2.0.1",
     "pg": "^8.16.2",
     "prisma": "^6.10.1",

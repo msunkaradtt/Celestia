@@ -1,17 +1,23 @@
 // FILE: server/scripts/admin.ts
 import { PrismaClient } from '@prisma/client';
 import inquirer from 'inquirer';
-import { minioClient, BUCKET_NAME } from '../minioClient';
+import { S3Client, DeleteObjectCommand, DeleteObjectsCommand } from "@aws-sdk/client-s3"; // Import AWS S3 Client
 
 const prisma = new PrismaClient();
+
+// Initialize S3 Client using environment variables
+const s3Client = new S3Client({ region: process.env.AWS_REGION });
+const BUCKET_NAME = process.env.S3_BUCKET_NAME;
 
 // --- Action Functions (deleteArtwork and deleteAllArtworks are updated) ---
 
 async function deleteArtwork() {
     console.log('\n--- Delete Artwork ---');
     try {
+        if (!BUCKET_NAME) throw new Error("S3_BUCKET_NAME environment variable is not set.");
+        
         const artworks = await prisma.artwork.findMany({ orderBy: { createdAt: 'desc' } });
-         if (artworks.length === 0) {
+        if (artworks.length === 0) {
             console.log('No artworks to delete.');
             return;
         }
@@ -29,9 +35,10 @@ async function deleteArtwork() {
         if (confirm) {
             const objectName = artworkToDelete.imageUrl.split('/').pop();
             if (objectName) {
-                console.log(`Attempting to delete "${objectName}" from MinIO bucket "${BUCKET_NAME}"...`);
-                await minioClient.removeObject(BUCKET_NAME, objectName);
-                console.log(`✅ Successfully deleted object from MinIO.`);
+                console.log(`Attempting to delete "${objectName}" from S3 bucket "${BUCKET_NAME}"...`);
+                const deleteCommand = new DeleteObjectCommand({ Bucket: BUCKET_NAME, Key: objectName });
+                await s3Client.send(deleteCommand);
+                console.log(`✅ Successfully deleted object from S3.`);
             }
             await prisma.artwork.delete({ where: { id: artworkId } });
             console.log('✅ Artwork successfully deleted from database.');
@@ -46,7 +53,9 @@ async function deleteArtwork() {
 async function deleteAllArtworks() {
     console.log('\n--- !!! DANGER ZONE: Delete All Artworks !!! ---');
     try {
-        const { confirm } = await inquirer.prompt([{ name: 'confirm', message: `This will permanently delete ALL artworks from the database and storage. Are you absolutely sure?`, type: 'confirm', default: false }]);
+        if (!BUCKET_NAME) throw new Error("S3_BUCKET_NAME environment variable is not set.");
+
+        const { confirm } = await inquirer.prompt([{ name: 'confirm', message: `This will permanently delete ALL artworks. This action cannot be undone. Are you absolutely sure?`, type: 'confirm', default: false }]);
         
         if (!confirm) {
             console.log('Deletion cancelled.');
@@ -54,14 +63,20 @@ async function deleteAllArtworks() {
         }
 
         const artworks = await prisma.artwork.findMany();
-        const objectNames = artworks.map(art => art.imageUrl.split('/').pop()).filter(Boolean) as string[];
+        const objectsToDelete = artworks
+            .map(art => ({ Key: art.imageUrl.split('/').pop() }))
+            .filter(obj => obj.Key) as { Key: string }[];
 
-        if (objectNames.length > 0) {
-            console.log(`Attempting to delete ${objectNames.length} objects from MinIO...`);
-            await minioClient.removeObjects(BUCKET_NAME, objectNames);
-            console.log(`✅ Successfully deleted objects from MinIO.`);
+        if (objectsToDelete.length > 0) {
+            console.log(`Attempting to delete ${objectsToDelete.length} objects from S3...`);
+            const deleteCommand = new DeleteObjectsCommand({
+                Bucket: BUCKET_NAME,
+                Delete: { Objects: objectsToDelete },
+            });
+            await s3Client.send(deleteCommand);
+            console.log(`✅ Successfully deleted objects from S3.`);
         } else {
-            console.log('No objects to delete from MinIO.');
+            console.log('No objects to delete from S3.');
         }
         
         const { count } = await prisma.artwork.deleteMany();
@@ -73,7 +88,6 @@ async function deleteAllArtworks() {
 
 
 // --- Other functions (list, add, edit) and main loop remain the same ---
-// (The full code is below for your convenience)
 
 async function listArtworks() {
     console.log('\nFetching last 20 artworks...');
