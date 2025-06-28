@@ -1,25 +1,42 @@
 # FILE: server/Dockerfile
 
-# Start with a stable and lightweight Node.js image
-FROM node:18.18-alpine
+# --- Build Stage ---
+# Start with a full Node.js image to ensure we have all build tools
+FROM node:18.18-alpine AS builder
 
-# Set the working directory inside the container
+# Set the working directory
 WORKDIR /usr/src/app
 
-# Copy package.json and package-lock.json
+# Copy package files and install ALL dependencies (including dev)
 COPY package*.json ./
+RUN npm install
 
-# Install only production dependencies to keep the image small
-RUN npm install --production
-
-# Copy the rest of the application source code
+# Copy the rest of the source code
 COPY . .
 
-# Run the TypeScript build process
+# Generate the Prisma client and run the TypeScript build
+RUN npm run postinstall
 RUN npm run build
 
-# Expose the port the application will run on
+# --- Production Stage ---
+# Start from a clean, lean image for the final product
+FROM node:18.18-alpine
+
+WORKDIR /usr/src/app
+
+# Copy only the necessary package files
+COPY package*.json ./
+
+# Install only the production dependencies
+RUN npm install --production
+
+# Copy the built application from the 'builder' stage
+COPY --from=builder /usr/src/app/dist ./dist
+# Copy the Prisma schema for the runtime
+COPY --from=builder /usr/src/app/prisma ./prisma
+
+# Expose the application port
 EXPOSE 3001
 
-# The command to start the application directly with Node
+# The command to start the application
 CMD ["node", "dist/server.js"]
