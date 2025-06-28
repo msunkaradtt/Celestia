@@ -28,7 +28,7 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 
 # Install only the production dependencies
-RUN npm install --production
+RUN npm install --omit=dev
 
 # Copy the built application from the 'builder' stage
 COPY --from=builder /usr/src/app/dist ./dist
