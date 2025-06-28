@@ -39,7 +39,7 @@ async function waitForAiService() {
 async function startBackgroundServices() {
     console.log('Starting background services...');
     //await setupMinio();
-    await waitForAiService();
+    //await waitForAiService();
     startTleScheduler();
     startWorker();
     console.log('✅ Background services started.');
