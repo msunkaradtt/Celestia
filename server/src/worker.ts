@@ -11,8 +11,8 @@ import { artGenerationQueue, broadcast } from './queue';
 // --- FIX: Import ResourceType enum ---
 import { EC2Client, RunInstancesCommand, DescribeInstancesCommand, ResourceType } from "@aws-sdk/client-ec2";
 
-const redisHost = process.env.REDIS_HOST;
-const redisPort = process.env.REDIS_PORT;
+const redisHost = "redis";
+const redisPort = "6379";
 
 console.log(`[Worker Redis] Attempting to connect to: ${redisHost}:${redisPort}`);
 
