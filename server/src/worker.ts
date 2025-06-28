@@ -11,14 +11,16 @@ import { artGenerationQueue, broadcast } from './queue';
 // --- FIX: Import ResourceType enum ---
 import { EC2Client, RunInstancesCommand, DescribeInstancesCommand, ResourceType } from "@aws-sdk/client-ec2";
 
-const redisHost = process.env.REDIS_HOST || 'localhost';
-const redisPort = process.env.REDIS_PORT || '6379';
-const connection = new IORedis({ host: redisHost, port: parseInt(redisPort), maxRetriesPerRequest: null });
+const redisHost = process.env.REDIS_HOST;
+const redisPort = process.env.REDIS_PORT;
+const connection = new IORedis(`rediss://:${redisHost}:${redisPort}`, {
+    maxRetriesPerRequest: null
+});
 
 const region = process.env.AWS_REGION || "us-east-1";
 const ec2Client = new EC2Client({ region });
 const AI_INSTANCE_LAUNCH_TEMPLATE = process.env.AI_INSTANCE_LAUNCH_TEMPLATE || '';
-let aiServiceUrl = process.env.AI_SERVICE_URL || '';
+let aiServiceUrl = process.env.AI_SERVICE_URL;
 
 async function ensureAiServiceIsRunning(): Promise<string> {
     const params = {
