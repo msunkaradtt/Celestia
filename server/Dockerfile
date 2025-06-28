@@ -2,36 +2,41 @@
 
 # --- Build Stage ---
 # Start with a full Node.js image to ensure we have all build tools
-FROM node:18.18-alpine AS builder
+FROM node:18 AS builder
+WORKDIR /app
 
-# Set the working directory
-WORKDIR /usr/src/app
-
-# Copy package files and install ALL dependencies (including dev)
+# Copy package files and schema
 COPY package*.json ./
+COPY prisma ./prisma/
+
+# Install all dependencies. This will also trigger "npm run postinstall"
+# which runs "prisma generate" for the builder environment.
 RUN npm install
 
 # Copy the rest of the source code
 COPY . .
 
-# Generate the Prisma client and run the TypeScript build
-RUN npm run postinstall
+# Compile TypeScript into JavaScript
 RUN npm run build
 
-# --- Production Stage ---
-# Start from a clean, lean image for the final product
-FROM node:18.18-alpine
 
-WORKDIR /usr/src/app
+# ---- STAGE 2: The Production Image ----
+# This stage creates the final, lean container for running the app.
+FROM node:18-alpine
+WORKDIR /app
 
-# Copy only the necessary package files
+# Install netcat for our wait script and openssl for Prisma
+RUN apk add --no-cache netcat-openbsd openssl
+
+# Copy package files and schema
 COPY package*.json ./
+COPY prisma ./prisma/
 
-# Install only the production dependencies
+# Install ONLY production dependencies. This triggers the postinstall script again.
 RUN npm install --omit=dev
 
-# Copy the built application from the 'builder' stage
-COPY --from=builder /usr/src/app/dist ./dist
+# Copy the compiled 'dist' folder from the 'builder' stage
+COPY --from=builder /app/dist ./dist
 # Copy the Prisma schema for the runtime
 COPY --from=builder /usr/src/app/prisma ./prisma
 
