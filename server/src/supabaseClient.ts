@@ -1,13 +1,7 @@
 // FILE: server/src/supabaseClient.ts
-import { createClient } from '@supabase/supabase-js';
+import { S3Client } from "@aws-sdk/client-s3";
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
+const region = process.env.AWS_REGION || "us-east-1";
 
-if (!supabaseUrl || !supabaseServiceKey) {
-    throw new Error("Supabase URL and Service Key must be provided in environment variables.");
-}
-
-// The service_role key has admin privileges and is safe to use on the server.
-// It bypasses any Row Level Security policies.
-export const supabase = createClient(supabaseUrl, supabaseServiceKey);
+export const s3Client = new S3Client({ region });
+export const BUCKET_NAME = process.env.S3_BUCKET_NAME || 'artworks';

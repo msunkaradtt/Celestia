@@ -14,9 +14,11 @@ if (!redisHost || !redisPort) {
     throw new Error('FATAL ERROR: REDIS_HOST and REDIS_PORT must be defined.');
 }
 
-const connection = new IORedis({
-  host: redisHost,
-  port: parseInt(redisPort),
+// Updated connection to handle ElastiCache
+const connection = new IORedis(`rediss://:${redisHost}:${redisPort}`, {
+  tls: {
+    rejectUnauthorized: false
+  },
   maxRetriesPerRequest: null
 });
 
