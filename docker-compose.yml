@@ -14,6 +14,8 @@ services:
     volumes:
       - ./server:/usr/src/app
       - /usr/src/app/node_modules
+    networks:
+      - celestia
   
   redis:
     image: redis:7-alpine
@@ -21,6 +23,12 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    networks:
+      - celestia
+
+networks:
+  celestia:
+    driver: bridge
 
 volumes:
   redis_data:
