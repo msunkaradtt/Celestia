@@ -7,16 +7,8 @@ services:
     depends_on:
       - redis
     environment:
-      # These will be provided in the EC2 environment
-      # DATABASE_URL
-      # S3_BUCKET_NAME
-      # AWS_REGION
-      # AI_SERVICE_URL
-      # NASA_API_KEY
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      # This is the URL for the AI service, which will be the public IP of the GPU instance
-      # We will set this dynamically
     volumes:
       - ./server:/usr/src/app
       - /usr/src/app/node_modules

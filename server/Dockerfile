@@ -1,47 +1,25 @@
 # FILE: server/Dockerfile
 
-# ---- STAGE 1: The Builder ----
-# This stage installs all dependencies and builds the project.
-FROM node:18 AS builder
-WORKDIR /app
+# Start with a stable and lightweight Node.js image
+FROM node:18.18-alpine
 
-# Copy package files and schema
+# Set the working directory inside the container
+WORKDIR /usr/src/app
+
+# Copy package.json and package-lock.json
 COPY package*.json ./
-COPY prisma ./prisma/
 
-# Install all dependencies. This will also trigger "npm run postinstall"
-# which runs "prisma generate" for the builder environment.
-RUN npm install
+# Install only production dependencies to keep the image small
+RUN npm install --production
 
-# Copy the rest of the source code
+# Copy the rest of the application source code
 COPY . .
 
-# Compile TypeScript into JavaScript
+# Run the TypeScript build process
 RUN npm run build
 
+# Expose the port the application will run on
+EXPOSE 3001
 
-# ---- STAGE 2: The Production Image ----
-# This stage creates the final, lean container for running the app.
-FROM node:18-alpine
-WORKDIR /app
-
-# Install netcat for our wait script and openssl for Prisma
-RUN apk add --no-cache netcat-openbsd openssl
-
-# Copy package files and schema
-COPY package*.json ./
-COPY prisma ./prisma/
-
-# Install ONLY production dependencies. This triggers the postinstall script again.
-RUN npm install --omit=dev
-
-# Copy the compiled 'dist' folder from the 'builder' stage
-COPY --from=builder /app/dist ./dist
-
-# Copy the wait script and make it executable
-COPY wait-for-it.sh .
-RUN chmod +x ./wait-for-it.sh
-
-# --- THE FINAL, SIMPLIFIED COMMAND ---
-# This command simply runs our new script. The script itself handles everything else.
-CMD ["/app/wait-for-it.sh"]
+# The command to start the application directly with Node
+CMD ["node", "dist/server.js"]
