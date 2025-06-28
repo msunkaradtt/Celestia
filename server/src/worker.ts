@@ -14,11 +14,18 @@ import { EC2Client, RunInstancesCommand, DescribeInstancesCommand, ResourceType 
 const redisHost = "redis";
 const redisPort = "6379";
 
-console.log(`[Worker Redis] Attempting to connect to: ${redisHost}:${redisPort}`);
+if (!redisHost || !redisPort) {
+    throw new Error('FATAL ERROR: REDIS_HOST and REDIS_PORT must be defined in the environment variables for the worker.');
+}
 
-const connection = new IORedis(`rediss://:${redisHost}:${redisPort}`, {
-    maxRetriesPerRequest: null
+const connection = new IORedis({
+  host: redisHost,
+  port: parseInt(redisPort),
+  maxRetriesPerRequest: null
 });
+
+connection.on('connect', () => console.log('[Worker Redis] Connected successfully.'));
+connection.on('error', err => console.error('[Worker Redis Connection Error]', err));
 
 const region = process.env.AWS_REGION || "us-east-1";
 const ec2Client = new EC2Client({ region });

@@ -14,15 +14,14 @@ if (!redisHost || !redisPort) {
     throw new Error('FATAL ERROR: REDIS_HOST and REDIS_PORT must be defined.');
 }
 
-console.log(`[Worker Redis] Attempting to connect to: ${redisHost}:${redisPort}`);
-
-// Updated connection to handle ElastiCache
-const connection = new IORedis(`rediss://:${redisHost}:${redisPort}`, {
-  tls: {
-    rejectUnauthorized: false
-  },
+const connection = new IORedis({
+  host: redisHost,
+  port: parseInt(redisPort),
   maxRetriesPerRequest: null
 });
+
+connection.on('connect', () => console.log('[Redis] Connected successfully.'));
+connection.on('error', err => console.error('[Redis Connection Error]', err));
 
 connection.on('connect', () => console.log('[Redis] Connected successfully.'));
 connection.on('error', err => console.error('[Redis Connection Error]', err));
