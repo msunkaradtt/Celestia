@@ -37,11 +37,6 @@ RUN npm install --omit=dev
 
 # Copy the compiled 'dist' folder from the 'builder' stage
 COPY --from=builder /app/dist ./dist
-# Copy the Prisma schema for the runtime
-COPY --from=builder /usr/src/app/prisma ./prisma
-
-# Expose the application port
-EXPOSE 3001
 
 # The command to start the application
 CMD ["node", "dist/server.js"]
