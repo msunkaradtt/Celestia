@@ -6,7 +6,7 @@
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "test": "jest",
     "build": "tsc",
-    "start:prod": "./wait-for-it.sh db 5432 -- node dist/server.js",
+    "start:prod": "node dist/server.js",
     "postinstall": "prisma generate",
     "seed": "ts-node prisma/seed.ts",
     "admin": "ts-node src/scripts/admin.ts",
