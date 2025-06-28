@@ -14,6 +14,8 @@ if (!redisHost || !redisPort) {
     throw new Error('FATAL ERROR: REDIS_HOST and REDIS_PORT must be defined.');
 }
 
+console.log(`[Worker Redis] Attempting to connect to: ${redisHost}:${redisPort}`);
+
 // Updated connection to handle ElastiCache
 const connection = new IORedis(`rediss://:${redisHost}:${redisPort}`, {
   tls: {
