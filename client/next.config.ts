@@ -6,7 +6,8 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '*.supabase.co',
+        hostname: 's3.amazonaws.com',
+        pathname: '/celestia-ms-101/**'
       },
     ],
   },
