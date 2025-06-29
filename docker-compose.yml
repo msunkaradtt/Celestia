@@ -7,7 +7,7 @@ services:
     depends_on:
       - redis
     environment:
-      DATABASE_URL: "postgresql://postgres:pe#sFFwKZLM1Xz@celestia-art-db.cbm268a4go9m.eu-central-1.rds.amazonaws.com:5432/celestia-art-db"
+      DATABASE_URL: "postgresql://postgres:pe%23sFFwKZLM1Xz@celestia-art-db.cbm268a4go9m.eu-central-1.rds.amazonaws.com:5432/celestia-art-db"
       S3_BUCKET_NAME: "celestia-ms-101"
       AWS_REGION: "eu-central-1"
       REDIS_HOST: "redis"
