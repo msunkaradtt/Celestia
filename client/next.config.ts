@@ -6,8 +6,9 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        // This wildcard pattern correctly allows any bucket from s3.amazonaws.com
-        hostname: '*.s3.amazonaws.com',
+        hostname: 'celestia-ms-101.s3.eu-central-1.amazonaws.com',
+        port: '',
+        pathname: '/**',
       },
     ],
   },
