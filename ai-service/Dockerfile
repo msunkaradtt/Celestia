@@ -1,31 +1,32 @@
 # FILE: ai-service/Dockerfile
 
-FROM pytorch/pytorch:2.3.1-cuda12.1-cudnn8-runtime
+# Use the NVIDIA CUDA development image
+FROM nvidia/cuda:11.8.0-devel-ubuntu22.04
 
-# Set the working directory
-WORKDIR /app
+# Set up environment
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONUNBUFFERED=1
 
-# Install dependencies including redis-tools for redis-cli
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    redis-tools \
+# Install Python and dependencies
+RUN apt-get update && apt-get install -y \
+    python3.9 \
+    python3-pip \
+    libgl1-mesa-glx \
     && rm -rf /var/lib/apt/lists/*
 
-# Upgrade pip and install Python dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+RUN ln -s /usr/bin/python3.9 /usr/bin/python
 
-# Copy the rest of the application code
+WORKDIR /app
+
+COPY requirements.txt .
+
+# Install PyTorch first
+RUN pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+
+# Install the rest of the requirements
+RUN pip install --no-cache-dir -r requirements.txt
+
 COPY . .
 
-# Create a startup script
-RUN echo '#!/bin/sh' > /app/start.sh && \
-    echo 'python3 /app/shutdown_monitor.py &' >> /app/start.sh && \
-    echo 'uvicorn main:app --host "0.0.0.0" --port 8000' >> /app/start.sh && \
-    chmod +x /app/start.sh
-
-# Expose the port the app runs on
-EXPOSE 8000
-
-# Set the default command to run the startup script
-CMD ["/app/start.sh"]
+# The command to start the RunPod handler script
+CMD ["python", "main.py"]

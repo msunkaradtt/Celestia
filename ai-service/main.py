@@ -1,47 +1,47 @@
 # FILE: ai-service/main.py
-from fastapi import FastAPI, File, UploadFile, Form
-from fastapi.responses import StreamingResponse, JSONResponse # Add JSONResponse
-import uvicorn
+import runpod
 import torch
 from diffusers import StableDiffusionControlNetPipeline, ControlNetModel, UniPCMultistepScheduler
 from PIL import Image, ImageFilter
 import io
+import base64
 
-# --- Model Setup (remains the same) ---
-print("Loading models, this may take a while...")
-device = "cuda" if torch.cuda.is_available() else "cpu"
-print(f"Using device: {device}")
-torch_dtype = torch.float16 if device == "cuda" else torch.float32
+# This setup code runs only once when RunPod starts a new worker.
+print("Loading models...")
+device = "cuda"
+torch_dtype = torch.float16
 controlnet = ControlNetModel.from_pretrained("lllyasviel/sd-controlnet-canny", torch_dtype=torch_dtype)
-pipe = StableDiffusionControlNetPipeline.from_pretrained("runwayml/stable-diffusion-v1-5", controlnet=controlnet, torch_dtype=torch_dtype)
+pipe = StableDiffusionControlNetPipeline.from_pretrained(
+    "runwayml/stable-diffusion-v1-5", controlnet=controlnet, torch_dtype=torch_dtype
+)
 pipe.scheduler = UniPCMultistepScheduler.from_config(pipe.scheduler.config)
-
 pipe.to(device)
 print("Models loaded successfully.")
-# --- End Model Setup ---
 
-app = FastAPI()
+def handler(job):
+    """
+    This is the handler function that RunPod will call for each job.
+    """
+    job_input = job['input']
 
-# --- NEW: Health Check Endpoint ---
-@app.get("/health")
-async def health_check():
-    # This endpoint will only be reachable after the models are loaded and Uvicorn starts.
-    return JSONResponse(content={"status": "ok"})
+    # Extract data from the job input
+    prompt = job_input.get('prompt')
+    negative_prompt = job_input.get('negative_prompt')
+    image_b64 = job_input.get('image')
 
+    if not all([prompt, negative_prompt, image_b64]):
+        return {"error": "Missing required input fields."}
 
-@app.post("/generate-art")
-async def generate_art(
-    image: UploadFile = File(...),
-    prompt: str = Form(...),
-    negative_prompt: str = Form(...)
-):
-    # This logic remains the same
-    image_data = await image.read()
+    # Process the image
+    image_data = base64.b64decode(image_b64)
     input_image = Image.open(io.BytesIO(image_data)).convert("RGB")
     input_image_l = input_image.convert("L")
     canny_image = input_image_l.filter(ImageFilter.FIND_EDGES)
+
     print(f"Using prompt: {prompt}")
     generator = torch.manual_seed(0)
+
+    # Generate the new artwork
     generated_image = pipe(
         prompt,
         num_inference_steps=20,
@@ -51,10 +51,14 @@ async def generate_art(
         controlnet_conditioning_scale=0.5,
     ).images[0]
     print("Artwork generated.")
+
+    # Convert the output image to a base64 string for the JSON response
     buffer = io.BytesIO()
     generated_image.save(buffer, format="PNG")
     buffer.seek(0)
-    return StreamingResponse(buffer, media_type="image/png")
+    img_str = base64.b64encode(buffer.getvalue()).decode('utf-8')
+    
+    return {"image_base64": img_str}
 
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+# Start the RunPod serverless worker
+runpod.serverless.start({"handler": handler})

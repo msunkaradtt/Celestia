@@ -1,8 +1,8 @@
-fastapi
-uvicorn
+# FILE: ai-service/requirements.txt
 python-multipart
 torch
 diffusers[torch]>=0.20.0
 transformers
 accelerate
 Pillow
+runpod
