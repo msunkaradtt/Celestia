@@ -14,8 +14,6 @@ RUN apt-get update && apt-get install -y \
     libgl1-mesa-glx \
     && rm -rf /var/lib/apt/lists/*
 
-RUN ln -s /usr/bin/python3.9 /usr/bin/python
-
 WORKDIR /app
 
 COPY requirements.txt .
@@ -29,4 +27,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # The command to start the RunPod handler script
-CMD ["python", "main.py"]
+CMD ["python3", "main.py"]
