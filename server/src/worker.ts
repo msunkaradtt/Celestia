@@ -2,6 +2,9 @@
 import { Worker, Job } from 'bullmq';
 import IORedis from 'ioredis';
 import axios from 'axios';
+import FormData from 'form-data';
+// Assuming you have a supabaseClient.ts file that exports the s3Client and BUCKET_NAME
+// If not, you may need to create it to initialize your S3 client.
 import { s3Client, BUCKET_NAME } from './supabaseClient';
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import prisma from './db';
@@ -21,7 +24,14 @@ if (!runpodApiKey || !runpodEndpointId) {
     throw new Error('RunPod API Key and Endpoint ID must be defined');
 }
 
-const connection = new IORedis({ host: redisHost, port: parseInt(redisPort), maxRetriesPerRequest: null });
+// --- THE FIX: Add enableReadyCheck to the connection options ---
+// This makes the connection more robust and prevents the READONLY error after idle periods.
+const connection = new IORedis({
+    host: redisHost,
+    port: parseInt(redisPort),
+    maxRetriesPerRequest: null,
+    enableReadyCheck: true
+});
 
 const processJob = async (job: Job) => {
     const { prompt, negativePrompt, satelliteName, imageName, signatureImageBuffer } = job.data;
@@ -53,6 +63,7 @@ const processJob = async (job: Job) => {
             Key: generatedImageName,
             Body: generatedImageBuffer,
             ContentType: 'image/png',
+            ACL: 'public-read' // Add this if you want images to be publicly viewable
         }));
         
         const imageUrl = `https://${BUCKET_NAME}.s3.${region}.amazonaws.com/${generatedImageName}`;
@@ -65,19 +76,14 @@ const processJob = async (job: Job) => {
         broadcast({ type: 'artwork_completed', artwork: newArtwork });
 
     } catch (error) {
-        // --- THIS IS THE FIX ---
         let errorMessage = 'An unknown error occurred';
         if (axios.isAxiosError(error)) {
-            // This checks if it's an error from an API call
             errorMessage = JSON.stringify(error.response?.data) || error.message;
         } else if (error instanceof Error) {
-            // This checks if it's a standard JavaScript Error
             errorMessage = error.message;
         }
         console.error(`[Worker] Job ${job.id} failed:`, errorMessage);
-        // We re-throw the original error to let BullMQ handle the job failure
         throw error;
-        // --- END FIX ---
     }
 };
 

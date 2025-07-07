@@ -17,7 +17,8 @@ if (!redisHost || !redisPort) {
 const connection = new IORedis({
   host: redisHost,
   port: parseInt(redisPort),
-  maxRetriesPerRequest: null
+  maxRetriesPerRequest: null,
+  enableReadyCheck: true
 });
 
 connection.on('connect', () => console.log('[Redis] Connected successfully.'));
